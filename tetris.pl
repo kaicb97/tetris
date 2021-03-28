@@ -26,10 +26,8 @@ $terminal->Trequire(qw/ce ku kd/);
 my $FH = *STDOUT;
 
 my %board;
-my $item_x = 4;
-my $pos_y  = 19;
-
-my $time = time;
+my $pos_x = 4;
+my $pos_y = 19;
 
 init_empty_board();
 print_board();
@@ -120,7 +118,7 @@ sub move {
     if ( $ver != 0 ) {
 
         #item is done if it tries to move down on non empty position
-        if ( hit( $item_x + $hor, $pos_y + $ver, 2 ) ) {
+        if ( hit( $pos_x + $hor, $pos_y + $ver, 2 ) ) {
             if ( check_game_over() ) {
                 print "Game Over!\n";
                 exit(0);
@@ -134,30 +132,30 @@ sub move {
         }
 
         my @row = @{ $board{"row_$pos_y"} };
-        $row[$item_x]        = 0;
-        $row[ $item_x + 1 ]  = 0;
+        $row[$pos_x]         = 0;
+        $row[ $pos_x + 1 ]   = 0;
         $board{"row_$pos_y"} = \@row;
 
         $pos_y += $ver;
 
         my @next_row = @{ $board{"row_$pos_y"} };
-        $next_row[$item_x]       = 1;
-        $next_row[ $item_x + 1 ] = 1;
-        $board{"row_$pos_y"}     = \@next_row;
+        $next_row[$pos_x]       = 1;
+        $next_row[ $pos_x + 1 ] = 1;
+        $board{"row_$pos_y"}    = \@next_row;
 
         $hor_moves = 0;
     }
     if ($hor) {
         my @row = @{ $board{"row_$pos_y"} };
-        $row[$item_x]        = 0;
-        $row[ $item_x + 1 ]  = 0;
+        $row[$pos_x]         = 0;
+        $row[ $pos_x + 1 ]   = 0;
         $board{"row_$pos_y"} = \@row;
 
-        $item_x += $hor;
+        $pos_x += $hor;
 
         @row                 = @{ $board{"row_$pos_y"} };
-        $row[$item_x]        = 1;
-        $row[ $item_x + 1 ]  = 1;
+        $row[$pos_x]         = 1;
+        $row[ $pos_x + 1 ]   = 1;
         $board{"row_$pos_y"} = \@row;
 
         $hor_moves++;
@@ -181,7 +179,7 @@ sub check_clear_row {
 
 sub clear_row {
     my ($row2clear) = @_;
-my @row;
+    my @row;
     push @row, 0 while ( scalar @row < 10 );
     $board{"row_$row2clear"} = \@row;
 }
@@ -208,8 +206,8 @@ sub hit {
 
 sub trigger_next {
     print "next\n";
-    $item_x = 4;
-    $pos_y  = 19;
+    $pos_x = 4;
+    $pos_y = 19;
     return;
 }
 
