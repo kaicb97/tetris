@@ -49,6 +49,10 @@ sub input_cb {
         move( 1, 0 );
     }
 
+    if ( $key eq "s" ) {
+        move( 0, -1);
+    }
+
     if ( $key eq " " ) {
         roate();
     }
