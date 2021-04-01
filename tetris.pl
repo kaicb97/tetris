@@ -26,8 +26,12 @@ $terminal->Trequire(qw/ce ku kd/);
 my $FH = *STDOUT;
 
 my %board;
-my $pos_x = 4;
-my $pos_y = 19;
+my $pos_x     = 4;
+my $pos_y     = 16;
+my $hor_moves = 0;
+my @bar       = ( [ 1, 1 ] );
+my @square    = ( [ 1, 1 ], [ 1, 1 ] );
+my @cur_block = @bar;
 
 init_empty_board();
 print_board();
@@ -42,15 +46,18 @@ sub input_cb {
 
     print "key hit";
     if ( $key eq "a" ) {
-        move( -1, 0 );
+        $pos_x--;
+        set_block( "left", ".", $pos_y, $pos_x, \@cur_block );
     }
 
     if ( $key eq "d" ) {
-        move( 1, 0 );
+        $pos_x++;
+        set_block( "right", ".", $pos_y, $pos_x, \@cur_block );
     }
 
     if ( $key eq "s" ) {
-        move( 0, -1);
+        $pos_y--;
+        set_block( "down", ".", $pos_y, $pos_x, \@cur_block );
     }
 
     if ( $key eq " " ) {
@@ -73,7 +80,8 @@ sub wait_for_input {
         select( undef, undef, undef, 0.01 );
         $move_down_counter++;
         if ( $move_down_counter > 30 ) {
-            move( 0, -1 );
+            #$pos_y--;
+            #set_block( "down", ".", $pos_y, $pos_x, \@cur_block );
             $move_down_counter = 0;
         }
     }
@@ -108,64 +116,6 @@ sub print_board {
         }
         print "\n";
     }
-}
-
-my $hor_moves = 0;
-
-sub move {
-    my ( $hor, $ver ) = @_;
-
-    #force move down after 10 hor moves - hacky
-    $ver = -1 if ( $hor_moves > 9 );
-
-    #later use loop
-    if ( $ver != 0 ) {
-
-        #item is done if it tries to move down on non empty position
-        if ( hit( $pos_x + $hor, $pos_y + $ver, 2 ) ) {
-            if ( check_game_over() ) {
-                print "Game Over!\n";
-                exit(0);
-            }
-            if ( check_clear_row() ) {
-                clear_row($pos_y);
-                print "schould clear that row bro ho ho hoe\n";
-            }
-            trigger_next();
-            return;
-        }
-
-        my @row = @{ $board{"row_$pos_y"} };
-        $row[$pos_x]         = 0;
-        $row[ $pos_x + 1 ]   = 0;
-        $board{"row_$pos_y"} = \@row;
-
-        $pos_y += $ver;
-
-        my @next_row = @{ $board{"row_$pos_y"} };
-        $next_row[$pos_x]       = 1;
-        $next_row[ $pos_x + 1 ] = 1;
-        $board{"row_$pos_y"}    = \@next_row;
-
-        $hor_moves = 0;
-    }
-    if ($hor) {
-        my @row = @{ $board{"row_$pos_y"} };
-        $row[$pos_x]         = 0;
-        $row[ $pos_x + 1 ]   = 0;
-        $board{"row_$pos_y"} = \@row;
-
-        $pos_x += $hor;
-
-        @row                 = @{ $board{"row_$pos_y"} };
-        $row[$pos_x]         = 1;
-        $row[ $pos_x + 1 ]   = 1;
-        $board{"row_$pos_y"} = \@row;
-
-        $hor_moves++;
-    }
-
-    print_board();
 }
 
 sub check_game_over {
@@ -217,4 +167,64 @@ sub trigger_next {
 
 sub rotate {
     return;
+}
+
+sub set_block {
+    my ( $direction, $char, $row, $col, $block ) = @_;
+
+    #print "set_block: char = $char, row = $row, col = $col\n";
+    #print Dumper $block;
+
+    my @block        = @{$block};
+    my $block_height = scalar @block;
+
+    my %changed_rows;
+
+    #posy + height +1 muss genullt werden
+    if ( $direction eq "down" ) {
+        my $row_to_clear = $row + $block_height;
+        print "clear row $row_to_clear\n";
+        my @row          = @{ $board{"row_$row_to_clear"} };
+        for ( my $k = 0 ; $k < scalar @{ $block[-1] } ; $k++ ) {
+            $row[ $col + $k ] = 0;
+        }
+        $changed_rows{"row_$row_to_clear"} = \@row;
+    }
+
+    for ( my $i = 0 ; $i < $block_height ; $i++ ) {
+        my $block_y   = $row + $i;
+        my @row       = @{ $board{"row_$block_y"} };
+        my $row_width = scalar @{ $block[$i] };
+
+        for ( my $j = 0 ; $j < $row_width ; $j++ ) {
+            my $row_x = $pos_x + $j;
+            #if ( $row[$row_x] != 0 && $block[$i][$j] == 1 ) {
+
+                #hit
+                #dont edit board
+                #trigger next
+                #return;
+                #}
+            $row[$row_x] = $block[$i][$j];
+        }
+
+        if ( $direction eq "left" ) {
+            my $x = $pos_x + $row_width;
+            $row[$x] = 0;
+        }
+        if ( $direction eq "right" ) {
+            my $x = $pos_x - 1;
+            $row[$x] = 0;
+        }
+        $changed_rows{"row_$block_y"} = \@row;
+    }
+
+    #draw changes on board, after no collision
+    foreach my $key ( keys %changed_rows ) {
+        $board{$key} = $changed_rows{$key};
+    }
+
+    print_board();
+
+    #    $pos_y--;
 }
