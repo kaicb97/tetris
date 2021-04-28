@@ -26,13 +26,18 @@ $terminal->Trequire(qw/ce ku kd/);
 my $FH = *STDOUT;
 
 my %board;
-my $pos_x      = 4;
-my $pos_y      = 16;
-my $hor_moves  = 0;
-my @bar        = ( [ 1, 1 ] );
-my @square     = ( [ 1, 1 ], [ 1, 1 ] );
-my @all_blocks = ( \@bar, \@square );
-my @cur_block  = @square;
+my $pos_x          = 4;
+my $pos_y          = 16;
+my $hor_moves      = 0;
+my @hero           = ( [ 1, 1, 1, 1 ] );
+my @smashboy       = ( [ 1, 1 ], [ 1, 1 ] );
+my @orange_ricky   = ( [ 0, 0, 1 ], [ 1, 1, 1 ] );
+my @blue_ricky     = ( [ 1, 0, 0 ], [ 1, 1, 1 ] );
+my @cleveland_z    = ( [ 1, 1 ], [ 0, 1, 1 ] );
+my @rhode_island_z = ( [ 0, 1, 1 ], [ 1, 1, 0 ] );
+my @teewee         = ( [ 0, 1, 0 ], [ 1, 1, 1 ] );
+my @all_blocks     = ( \@hero, \@smashboy, \@orange_ricky, \@blue_ricky, \@cleveland_z, \@rhode_island_z, \@teewee );
+my @cur_block      = $all_blocks[ rand(7) ];
 
 init_empty_board();
 print_board();
@@ -114,9 +119,16 @@ sub print_board {
     for ( my $i = 19 ; $i >= 0 ; $i-- ) {
         my @row = @{ $board{"row_$i"} };
         foreach my $field (@row) {
-            ($field) ? print "x " : print "_ ";
+            ($field) ? print colored( ['black on_black'], "x x " ) : print colored( ['white on_white'], "_ _ " );
+            print " ";
         }
         print "\n";
+        foreach my $field (@row) {
+            ($field) ? print colored( ['black on_black'], "x x " ) : print colored( ['white on_white'], "_ _ " );
+            print " ";
+        }
+
+        print "\n\n";
     }
 }
 
@@ -169,7 +181,7 @@ sub trigger_next {
 
     #choose random next element
 
-    my $random = int( rand(2) );
+    my $random = int( rand( scalar @all_blocks ) );
     @cur_block = @{ $all_blocks[$random] };
 
     print "next\n";
@@ -205,14 +217,26 @@ sub set_block {
         }
 
         #check if the space for moving the element down is free
-        for ( my $i = $col ; $i < $col + scalar @{ $block[ $block_height - 1 ] } ; $i++ ) {
+        my @block_bottom_row = @{ $block[-1] };
+        my @r                = @{ $board{"row_$row"} };
 
-            my @r = @{ $board{"row_$row"} };
-            if ( $r[$i] == 1 ) {
+        my $i = 0;
+        for my $value (@block_bottom_row) {
+            if ( $r[ $col + $i ] == 1 && $value == 1 ) {
                 trigger_next();
                 return;
             }
+            $i++;
         }
+
+        #for ( my $i = $col ; $i < $col + scalar @{ $block[ $block_height - 1 ] } ; $i++ ) {
+
+        #    my @r = @{ $board{"row_$row"} };
+        #    if ( $r[$i] == 1 ) {
+        #        trigger_next();
+        #        return;
+        #    }
+        #}
 
         my $row_to_clear = $row + $block_height;
         print "clear row $row_to_clear\n";
