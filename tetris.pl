@@ -26,12 +26,13 @@ $terminal->Trequire(qw/ce ku kd/);
 my $FH = *STDOUT;
 
 my %board;
-my $pos_x     = 4;
-my $pos_y     = 16;
-my $hor_moves = 0;
-my @bar       = ( [ 1, 1 ] );
-my @square    = ( [ 1, 1 ], [ 1, 1 ] );
-my @cur_block = @bar;
+my $pos_x      = 4;
+my $pos_y      = 16;
+my $hor_moves  = 0;
+my @bar        = ( [ 1, 1 ] );
+my @square     = ( [ 1, 1 ], [ 1, 1 ] );
+my @all_blocks = ( \@bar, \@square );
+my @cur_block  = @square;
 
 init_empty_board();
 print_board();
@@ -80,8 +81,9 @@ sub wait_for_input {
         select( undef, undef, undef, 0.01 );
         $move_down_counter++;
         if ( $move_down_counter > 30 ) {
-            #$pos_y--;
-            #set_block( "down", ".", $pos_y, $pos_x, \@cur_block );
+
+            $pos_y--;
+            set_block( "down", ".", $pos_y, $pos_x, \@cur_block );
             $move_down_counter = 0;
         }
     }
@@ -159,6 +161,17 @@ sub hit {
 }
 
 sub trigger_next {
+    if ( $pos_y >= 18 ) {
+        print "game over";
+        ReadMode 0;
+        exit(0);
+    }
+
+    #choose random next element
+
+    my $random = int( rand(2) );
+    @cur_block = @{ $all_blocks[$random] };
+
     print "next\n";
     $pos_x = 4;
     $pos_y = 19;
@@ -182,13 +195,36 @@ sub set_block {
 
     #posy + height +1 muss genullt werden
     if ( $direction eq "down" ) {
+
+        print "row: $row\n";
+
+        #element hits the bottom border so trigger the next element
+        if ( $row < 0 ) {
+            trigger_next();
+            return;
+        }
+
+        #check if the space for moving the element down is free
+        for ( my $i = $col ; $i < $col + scalar @{ $block[ $block_height - 1 ] } ; $i++ ) {
+
+            my @r = @{ $board{"row_$row"} };
+            if ( $r[$i] == 1 ) {
+                trigger_next();
+                return;
+            }
+        }
+
         my $row_to_clear = $row + $block_height;
         print "clear row $row_to_clear\n";
-        my @row          = @{ $board{"row_$row_to_clear"} };
-        for ( my $k = 0 ; $k < scalar @{ $block[-1] } ; $k++ ) {
-            $row[ $col + $k ] = 0;
+
+        #avoid undefined rows above the field
+        if ( $row_to_clear < 20 ) {
+            my @row = @{ $board{"row_$row_to_clear"} };
+            for ( my $k = 0 ; $k < scalar @{ $block[-1] } ; $k++ ) {
+                $row[ $col + $k ] = 0;
+            }
+            $changed_rows{"row_$row_to_clear"} = \@row;
         }
-        $changed_rows{"row_$row_to_clear"} = \@row;
     }
 
     for ( my $i = 0 ; $i < $block_height ; $i++ ) {
@@ -198,13 +234,14 @@ sub set_block {
 
         for ( my $j = 0 ; $j < $row_width ; $j++ ) {
             my $row_x = $pos_x + $j;
+
             #if ( $row[$row_x] != 0 && $block[$i][$j] == 1 ) {
 
-                #hit
-                #dont edit board
-                #trigger next
-                #return;
-                #}
+            #hit
+            #dont edit board
+            #trigger next
+            #return;
+            #}
             $row[$row_x] = $block[$i][$j];
         }
 
