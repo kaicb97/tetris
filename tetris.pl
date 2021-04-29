@@ -119,12 +119,12 @@ sub print_board {
     for ( my $i = 19 ; $i >= 0 ; $i-- ) {
         my @row = @{ $board{"row_$i"} };
         foreach my $field (@row) {
-            ($field) ? print colored( ['black on_black'], "x x " ) : print colored( ['white on_white'], "_ _ " );
+            ($field) ? print colored( ['blue on_blue'], "    " ) : print colored( ['white on_white'], "    " );
             print " ";
         }
         print "\n";
         foreach my $field (@row) {
-            ($field) ? print colored( ['black on_black'], "x x " ) : print colored( ['white on_white'], "_ _ " );
+            ($field) ? print colored( ['blue on_blue'], "    " ) : print colored( ['white on_white'], "    " );
             print " ";
         }
 
